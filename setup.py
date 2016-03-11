@@ -18,5 +18,6 @@ setup(
     url="https://m-labs.hk",
     download_url="https://github.com/m-labs/asyncserial",
     packages=find_packages(),
+    install_requires=["pyserial"],
     platforms=["Any"]
 )

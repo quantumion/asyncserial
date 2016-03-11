@@ -14,8 +14,11 @@ build:
 requirements:
   build:
     - python 3.5.*
+    - setuptools
+    - pyserial
   run:
     - python 3.5.*
+    - pyserial
 
 test:
   imports:
