@@ -13,10 +13,10 @@ build:
 
 requirements:
   build:
-    - python 3.5.*
+    - python >=3.5.0
     - pyserial
   run:
-    - python 3.5.*
+    - python >=3.5.0
     - pyserial
 
 test:
