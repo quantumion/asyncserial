@@ -30,7 +30,7 @@ class AsyncSerialBase:
         self.close()
 
     async def read_exactly(self, n):
-        data = bytesarray()
+        data = bytearray()
         while len(data) < n:
             remaining = n - len(data)
             data += await self.read(remaining)
