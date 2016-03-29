@@ -7,8 +7,14 @@ __all__ = ["AsyncSerial"]
 
 
 class AsyncSerialBase:
-    def __init__(self, *args, loop=None, **kwargs):
-        self.ser = serial.serial_for_url(*args, **kwargs)
+    def __init__(self, port=None, loop=None, timeout=None, write_timeout=None, inter_byte_timeout=None,
+                 **kwargs):
+        if (timeout is not None
+                or write_timeout is not None
+                or inter_byte_timeout is not None):
+            raise NotImplementedError("Use asyncio timeout features")
+
+        self.ser = serial.serial_for_url(port, **kwargs)
 
         if loop is None:
             loop = asyncio.get_event_loop()
