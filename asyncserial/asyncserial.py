@@ -118,7 +118,7 @@ if os.name != "nt":
             self.ser.close()
 
 else:
-    from asyncio import windows_utils import PipeHandle
+    from asyncio.windows_utils import PipeHandle
 
     class AsyncSerial(AsyncSerialBase):
         """Requires ProactorEventLoop"""
