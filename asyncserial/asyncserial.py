@@ -118,6 +118,8 @@ if os.name != "nt":
             self.ser.close()
 
 else:
+    from asyncio import windows_utils import PipeHandle
+
     class AsyncSerial(AsyncSerialBase):
         """Requires ProactorEventLoop"""
         def fileno(self):
@@ -127,10 +129,10 @@ else:
                 return self.ser.hComPort
 
         def read(self, n):
-            return self._loop._proactor.recv(self.fileno(), n)
+            return self._loop._proactor.recv(PipeHandle(self.fileno()), n)
 
         def write(self, data):
-            return self._loop._proactor.send(self.fileno(), data)
+            return self._loop._proactor.send(PipeHandle(self.fileno()), data)
 
         def close(self):
             self.ser.close()
