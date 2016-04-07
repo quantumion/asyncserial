@@ -119,7 +119,6 @@ if os.name != "nt":
 
 else:
     import ctypes
-    import win32
 
     class HandleWrapper:
         """Wrapper for an overlapped handle which is vaguely file-object like
@@ -155,11 +154,11 @@ else:
             handle = self.fileno()
 
             # configure behavior similar to unix read()
-            timeouts = win32.COMMTIMEOUTS()
-            timeouts.ReadIntervalTimeout = win32.MAXDWORD
-            timeouts.ReadTotalTimeoutMultiplier = win32.MAXDWORD
+            timeouts = serial.win32.COMMTIMEOUTS()
+            timeouts.ReadIntervalTimeout = serial.win32.MAXDWORD
+            timeouts.ReadTotalTimeoutMultiplier = serial.win32.MAXDWORD
             timeouts.ReadTotalTimeoutConstant = 0
-            win32.SetCommTimeouts(handle, ctypes.byref(timeouts))
+            serial.win32.SetCommTimeouts(handle, ctypes.byref(timeouts))
 
             self.handle_wrapper = HandleWrapper(handle)
 
