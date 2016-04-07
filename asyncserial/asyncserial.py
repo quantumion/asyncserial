@@ -121,7 +121,10 @@ else:
     class AsyncSerial(AsyncSerialBase):
         """Requires ProactorEventLoop"""
         def fileno(self):
-            return self.ser._port_handle
+            try:
+                return self.ser._port_handle
+            except AttributeError:
+                return self.ser.hComPort
 
         def read(self, n):
             return self._loop._proactor.recv(self.fileno(), n)
