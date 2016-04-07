@@ -13,15 +13,10 @@ class AsyncSerialBase:
                 or write_timeout is not None
                 or inter_byte_timeout is not None):
             raise NotImplementedError("Use asyncio timeout features")
-
         self.ser = serial.serial_for_url(port, **kwargs)
-
         if loop is None:
             loop = asyncio.get_event_loop()
         self._loop = loop
-
-        self.read_future = None
-        self.write_future = None
 
     def __enter__(self):
         return self
@@ -44,6 +39,11 @@ class AsyncSerialBase:
 
 if os.name != "nt":
     class AsyncSerial(AsyncSerialBase):
+        def __init__(self, *args, **kwargs):
+            AsyncSerialBase.__init__(self, *args, **kwargs)
+            self.read_future = None
+            self.write_future = None
+
         def fileno(self):
             return self.ser.fd
 
@@ -122,6 +122,10 @@ else:
 
     class AsyncSerial(AsyncSerialBase):
         """Requires ProactorEventLoop"""
+        def __init__(self, *args, **kwargs):
+            AsyncSerialBase.__init__(self, *args, **kwargs)
+            self.pipe_handle = PipeHandle(self.fileno())
+
         def fileno(self):
             try:
                 return self.ser._port_handle
@@ -129,10 +133,11 @@ else:
                 return self.ser.hComPort
 
         def read(self, n):
-            return self._loop._proactor.recv(PipeHandle(self.fileno()), n)
+            return self._loop._proactor.recv(self.pipe_handle, n)
 
         def write(self, data):
-            return self._loop._proactor.send(PipeHandle(self.fileno()), data)
+            return self._loop._proactor.send(self.pipe_handle, data)
 
         def close(self):
             self.ser.close()
+            self.pipe_handle._handle = None
