@@ -118,13 +118,50 @@ if os.name != "nt":
             self.ser.close()
 
 else:
-    from asyncio.windows_utils import PipeHandle
+    import ctypes
+    import win32
+
+    class HandleWrapper:
+        """Wrapper for an overlapped handle which is vaguely file-object like
+        (sic).
+
+        The IOCP event loop can use these instead of socket objects.
+        """
+        def __init__(self, handle):
+            self._handle = handle
+
+        @property
+        def handle(self):
+            return self._handle
+
+        def fileno(self):
+            return self._handle
+
+        def close(self):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, t, v, tb):
+            pass
+
 
     class AsyncSerial(AsyncSerialBase):
         """Requires ProactorEventLoop"""
         def __init__(self, *args, **kwargs):
             AsyncSerialBase.__init__(self, *args, **kwargs)
-            self.pipe_handle = PipeHandle(self.fileno())
+
+            handle = self.fileno()
+
+            # configure behavior similar to unix read()
+            timeouts = win32.COMMTIMEOUTS()
+            timeouts.ReadIntervalTimeout = win32.MAXDWORD
+            timeouts.ReadTotalTimeoutMultiplier = win32.MAXDWORD
+            timeouts.ReadTotalTimeoutConstant = 0
+            win32.SetCommTimeouts(handle, ctypes.byref(timeouts))
+
+            self.handle_wrapper = HandleWrapper(handle)
 
         def fileno(self):
             try:
@@ -133,11 +170,10 @@ else:
                 return self.ser.hComPort
 
         def read(self, n):
-            return self._loop._proactor.recv(self.pipe_handle, n)
+            return self._loop._proactor.recv(self.handle_wrapper, n)
 
         def write(self, data):
-            return self._loop._proactor.send(self.pipe_handle, data)
+            return self._loop._proactor.send(self.handle_wrapper, data)
 
         def close(self):
             self.ser.close()
-            self.pipe_handle._handle = None
