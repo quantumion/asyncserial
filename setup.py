@@ -17,6 +17,7 @@ setup(
     author_email="sb@m-labs.hk",
     url="https://m-labs.hk",
     download_url="https://github.com/m-labs/asyncserial",
+    license="BSD",
     packages=find_packages(),
     install_requires=["pyserial"],
     platforms=["Any"]

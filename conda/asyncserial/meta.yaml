@@ -25,4 +25,5 @@ test:
 
 about:
   home: https://m-labs.hk
+  license: BSD
   summary: 'asyncio support for pyserial'
