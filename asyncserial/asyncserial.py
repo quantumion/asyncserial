@@ -7,16 +7,13 @@ __all__ = ["AsyncSerial"]
 
 
 class AsyncSerialBase:
-    def __init__(self, port=None, loop=None, timeout=None, write_timeout=None, inter_byte_timeout=None,
+    def __init__(self, port=None, timeout=None, write_timeout=None, inter_byte_timeout=None,
                  **kwargs):
         if (timeout is not None
                 or write_timeout is not None
                 or inter_byte_timeout is not None):
             raise NotImplementedError("Use asyncio timeout features")
         self.ser = serial.serial_for_url(port, **kwargs)
-        if loop is None:
-            loop = asyncio.get_event_loop()
-        self._loop = loop
 
     def __enter__(self):
         return self
@@ -48,7 +45,7 @@ if os.name != "nt":
             return self.ser.fd
 
         def _read_ready(self, n):
-            self._loop.remove_reader(self.fileno())
+            asyncio.get_running_loop().remove_reader(self.fileno())
             if not self.read_future.cancelled():
                 try:
                     res = os.read(self.fileno(), n)
@@ -60,7 +57,8 @@ if os.name != "nt":
 
         def read(self, n):
             assert self.read_future is None or self.read_future.cancelled()
-            future = asyncio.Future(loop=self._loop)
+            loop = asyncio.get_running_loop()
+            future = asyncio.Future(loop=loop)
 
             if n == 0:
                 future.set_result(b"")
@@ -74,13 +72,12 @@ if os.name != "nt":
                         future.set_result(res)
                     else:
                         self.read_future = future
-                        self._loop.add_reader(self.fileno(),
-                                              self._read_ready, n)
+                        loop.add_reader(self.fileno(), self._read_ready, n)
 
             return future
 
         def _write_ready(self, data):
-            self._loop.remove_writer(self.fileno())
+            asyncio.get_running_loop().remove_writer(self.fileno())
             if not self.write_future.cancelled():
                 try:
                     res = os.write(self.fileno(), data)
@@ -92,7 +89,8 @@ if os.name != "nt":
 
         def write(self, data):
             assert self.write_future is None or self.write_future.cancelled()
-            future = asyncio.Future(loop=self._loop)
+            loop = asyncio.get_running_loop()
+            future = asyncio.Future(loop=loop)
 
             if len(data) == 0:
                 future.set_result(0)
@@ -101,8 +99,7 @@ if os.name != "nt":
                     res = os.write(self.fileno(), data)
                 except BlockingIOError:
                     self.write_future = future
-                    self._loop.add_writer(self.fileno(),
-                                          self._write_ready, data)
+                    loop.add_writer(self.fileno(), self._write_ready, data)
                 except Exception as exc:
                     future.set_exception(exc)
                 else:
@@ -112,9 +109,9 @@ if os.name != "nt":
 
         def close(self):
             if self.read_future is not None:
-                self._loop.remove_reader(self.fileno())
+                self.read_future.get_loop().remove_reader(self.fileno())
             if self.write_future is not None:
-                self._loop.remove_writer(self.fileno())
+                self.write_future.get_loop().remove_writer(self.fileno())
             self.ser.close()
 
 else:
@@ -169,10 +166,10 @@ else:
                 return self.ser.hComPort
 
         def read(self, n):
-            return self._loop._proactor.recv(self.handle_wrapper, n)
+            return asyncio.get_running_loop()._proactor.recv(self.handle_wrapper, n)
 
         def write(self, data):
-            return self._loop._proactor.send(self.handle_wrapper, data)
+            return asyncio.get_running_loop()._proactor.send(self.handle_wrapper, data)
 
         def close(self):
             self.ser.close()
