@@ -11,7 +11,7 @@ if sys.version_info[:3] < (3, 5):
 
 setup(
     name="asyncserial",
-    version="0.1",
+    version="1.0",
     description="asyncio support for pyserial",
     author="Sebastien Bourdeauducq",
     author_email="sb@m-labs.hk",
