@@ -33,10 +33,9 @@ class AsyncSerialBase:
             res = await self.write(data)
             data = data[res:]
 
-    async def readline(self):
-        newline = b'\n'
+    async def readline(self, terminator="\n"):
         data = bytearray()
-        while newline not in data:
+        while terminator not in data:
             data += await self.read_exactly(1)
         return data
 
