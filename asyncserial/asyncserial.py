@@ -37,7 +37,7 @@ class AsyncSerialBase:
         newline = b'\n'
         data = bytearray()
         while newline not in data:
-            data += await self.read(1)
+            data += await self.read_exactly(1)
         return data
 
 if os.name != "nt":
